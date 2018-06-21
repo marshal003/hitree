@@ -20,4 +20,3 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-    - '*.gif'
