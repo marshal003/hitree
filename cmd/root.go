@@ -74,7 +74,7 @@ func initOptions() {
 var rootCmd = &cobra.Command{
 	Use:   "hitree",
 	Short: "Print tree structure of the directory",
-	Long: `Golang implementation of popular tree command from linux.
+	Long: `Golang implementation of popular tree command from linux.q
 Note: windows 10 has issue with ansi color, so for this release we have
 disable color outputs on windows platform.
 	`,

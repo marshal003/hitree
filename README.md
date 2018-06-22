@@ -24,9 +24,10 @@ go get -u github.com/marshal003/hitree
 
 ### Intall from Binary
 
-```
-Inprogress...
-```
+- Download from [Release](https://github.com/marshal003/hitree/releases)
+- Extract tar and put the hitree binary in your path
+- Open terminal and type `hitree`
+- You can create alias if `hitree` looks too big to type :)
 
 ### Libraries Used
 
