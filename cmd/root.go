@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 
 	"github.com/marshal003/hitree/cmd/tree"
@@ -28,6 +29,25 @@ import (
 
 var opt tree.Options
 var cfgFile string
+
+//BuildInfo populated from goreleaser
+type buildInfo struct {
+	version string
+	commit  string
+	date    string
+}
+
+func (b buildInfo) Print() {
+	fmt.Printf("\n\nVersion: %v, Build: %v, Build Date: %v\n\n", b.version, b.commit, b.date)
+}
+
+var release buildInfo
+
+func releaseDetails(version, date, commit interface{}) {
+	release.version = version.(string)
+	release.commit = commit.(string)
+	release.date = date.(string)
+}
 
 func setColorOption(cmd *cobra.Command, colorHolder *tree.Colorize, flag string) {
 	color := viper.GetString(flag)
@@ -53,9 +73,13 @@ func initOptions() {
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "hitree",
-	Short: "Print tree of the directory",
+	Short: "Print tree structure of the directory",
+	Long: `Golang implementation of popular tree command from linux.
+Note: windows 10 has issue with ansi color, so for this release we have
+disable color outputs on windows platform.
+	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		nocolor := viper.GetBool("nocolor")
+		nocolor := viper.GetBool("nocolor") || (runtime.GOOS == "windows")
 		tree.InitAurora(!nocolor)
 		initOptions()
 		setColorOption(cmd, &opt.DirColor, "dircolor")
@@ -66,6 +90,11 @@ var rootCmd = &cobra.Command{
 		setColorOption(cmd, &opt.LLinkColor, "llinkcolor")
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		showVersion, _ := cmd.Flags().GetBool("version")
+		if showVersion {
+			release.Print()
+			return nil
+		}
 		root := "."
 		if len(args) >= 1 {
 			root = args[0]
@@ -82,7 +111,8 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(version, commit, date interface{}) {
+	releaseDetails(version, date, commit)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -94,6 +124,7 @@ func init() {
 	rootCmd.Flags().SortFlags = false
 	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hitree.yaml)")
+	rootCmd.Flags().BoolP("version", "v", false, "Version of hitree command")
 	rootCmd.Flags().BoolP("dironly", "d", false, "List only directories")
 	rootCmd.Flags().BoolP("all", "a", false, "List all files & directories including hidden ones")
 	rootCmd.Flags().BoolP("fullpath", "f", false, "Print full path prefix for all files")
