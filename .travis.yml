@@ -9,7 +9,7 @@ addons:
 env:
 # needed for the snap pipe:
 - PATH=/snap/bin:$PATH
-- DEP_VERSION=v0.4.1
+- DEP_VERSION="0.4.1"
 
 before_install:
   # Download the binary to bin folder in $GOPATH
