@@ -5,7 +5,7 @@ import "github.com/logrusorgru/aurora"
 //Colorize A function type which is being used in Options
 type Colorize func(interface{}) aurora.Value
 
-//Options holds command line options
+//Options Data model to hold command line options
 type Options struct {
 	IncludeHidden  bool
 	DirOnly        bool
@@ -24,14 +24,39 @@ type Options struct {
 	PipeColor      Colorize
 }
 
+// DefaultOptions A utility method to create default Options for hitree command
+// This is intensionally created for test cases
+func DefaultOptions() Options {
+	opt := Options{
+		IncludeHidden:  false,
+		DirOnly:        false,
+		ShowFullPath:   false,
+		NoReport:       false,
+		FollowLink:     false,
+		Prune:          false,
+		MaxLevel:       -1,
+		IncludePattern: "",
+		ExcludePattern: "",
+		DirColor:       ColorMap["gray"],
+		FileColor:      ColorMap["gray"],
+		SymLinkColor:   ColorMap["gray"],
+		TLinkColor:     ColorMap["gray"],
+		LLinkColor:     ColorMap["gray"],
+		PipeColor:      ColorMap["gray"],
+	}
+	return opt
+}
+
 var au aurora.Aurora
 
-//InitAurora Initialize Aurora, which is being used to print colorize output
+// InitAurora Utility method to initialize Aurora(ANSI color library),
+// being used to print colorize output.
+// Aurora Provides flag to allow enabling or disabling output
 func InitAurora(enableColorOutput bool) {
 	au = aurora.NewAurora(enableColorOutput)
 }
 
-// Create a partial function based on color and bold, which then
+// colorCurry: A partial function based on color and bold, which then
 // uses aurora to colorize the string provided to the message.
 // This way, we are restricting the uses of aurora instance only at one place and
 // are free to use any other library for coloring
@@ -44,8 +69,10 @@ var colorCurry = func(color aurora.Color, bold bool) Colorize {
 	}
 }
 
-// ColorMap A map of color to its colorize function, which will be obtained by
-// calling abaove colorCurry method with required color
+// ColorMap A map of supported colors, wich uses internal partial function and returns
+// a function of type Colorize. Uses of partial function allows us to limit the uses of
+// Aurora's way of colorizing the string at one place and gives us the flexibility to
+// easily switch to any other lib in future.
 var ColorMap = map[string]Colorize{
 	//gray
 	"gray":  colorCurry(aurora.GrayFg, false),

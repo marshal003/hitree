@@ -1,3 +1,7 @@
+// Package tree implements the data models and helper utilities for
+// printing tree structure of the specified directory
+//
+// By Vinit Kumar Rai <vinitrai.marshal@gmail.com>
 package tree
 
 import (
@@ -7,7 +11,11 @@ import (
 	"strings"
 )
 
-// Stats Data Model to hold the File & Dir Count in the tree
+// Stats Data Model to hold the File & Dir Count in the tree.
+// Going further this will be enhanced to keep other stats like
+// disk utilization, modification time etc at file and dir level
+// which could be helpful in including / excluding files and directories based on
+// these values.
 type Stats struct {
 	DirCount  int
 	FileCount int
@@ -33,7 +41,9 @@ func (tree Tree) String() string {
 	return fmt.Sprintf("%s->%+v", name, childrens)
 }
 
-// Print Prints the tree structure on console
+// Print is a utility method on the tree to print tree structure on console.
+// Later we will few more mthods on tree which will allow to output tree result
+// to other means like file or socket etc.
 func (tree Tree) Print(opt Options) {
 	tree.printTree(opt, 0, false)
 	if !opt.NoReport {
