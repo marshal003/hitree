@@ -23,7 +23,7 @@ deploy:
 - provider: script
   script: 
    - go test -v ./... -covermode=count -coverprofile=coverage.out
-   - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALL_TOKEN
+   - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken=$COVERALL_TOKEN
 - provider: script
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
