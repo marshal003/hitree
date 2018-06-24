@@ -1,3 +1,5 @@
 .DS_Store
 dist/
 notes.md
+vendor
+.vscode

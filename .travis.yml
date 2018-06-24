@@ -1,0 +1,32 @@
+language: go
+
+addons:
+  apt:
+    packages:
+    # needed for the nfpm pipe:
+    - rpm
+
+before_install:
+  # Download the binary to bin folder in $GOPATH
+  - curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o $GOPATH/bin/dep
+  # Make the binary executable
+  - chmod +x $GOPATH/bin/dep
+
+install:
+- dep ensure
+- go install 
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
+
+
+deploy:
+- provider: script
+  script: 
+   - go test -v ./... -covermode=count -coverprofile=coverage.out
+   - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken=$COVERALL_TOKEN
+- provider: script
+  skip_cleanup: true
+  script: curl -sL https://git.io/goreleaser | bash
+  on:
+    tags: true
+    condition: $TRAVIS_OS_NAME = linux
