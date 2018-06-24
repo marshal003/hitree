@@ -15,9 +15,18 @@ env:
 install:
 # needed for the snap pipe:
 - sudo snap install snapcraft --classic
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 
 # calls goreleaser
 deploy:
+- provider: script
+  script: 
+   - go test -v -covermode=count -coverprofile=coverage.out
+   - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALL_TOKEN
+  on:
+    tags: true
+    condition: $TRAVIS_OS_NAME = linux
 - provider: script
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
