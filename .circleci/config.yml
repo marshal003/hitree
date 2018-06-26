@@ -50,14 +50,14 @@ jobs:
           name: Restoring from cache
           keys:
             - requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
-      - deploy
-        name: Releasing New Build on github
-        command: curl -sL https://git.io/goreleaser | bash
+      - deploy:
+          name: Releasing New Build on github
+          command: curl -sL https://git.io/goreleaser | bash
 workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - release
+      - release:
           filters:
             branches:
               ignore: /.*/
