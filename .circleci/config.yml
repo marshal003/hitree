@@ -1,0 +1,35 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.10.0
+    branches:
+      - dev
+     
+    steps:
+      - checkout
+      - run: 
+        name: Install Dep
+        command: curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o $GOPATH/bin/dep
+      - run: 
+        name: Make dep accessible
+        command: chmod +x $GOPATH/bin/dep
+      - run: 
+        name: Install dependecies
+        command: dep ensure
+      - run: 
+        name: Install hitree
+        command: go install
+      - run: 
+        name: Install Cover
+        command: go get golang.org/x/tools/cmd/cover
+      - run: 
+        name: Get goverall
+        command: go get github.com/mattn/goveralls
+      - run:
+        name: Running test cases with coverage output enabled
+        command: go test -v ./... -covermode=count -coverprofile=coverage.out
+      - deploy:
+        name: "Publish test result to coverall"
+        command: goveralls -coverprofile=coverage.out -service=travis-ci -repotoken=$COVERALL_TOKEN
+    
