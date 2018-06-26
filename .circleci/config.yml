@@ -1,11 +1,24 @@
 version: 2
 jobs:
+  release:
+    working_directory: /go/src/github.com/marshal003/hitree
+    docker:
+      - image: circleci/golang:1.10.0
+    branches:
+      only:
+        - release
+    steps:
+      - checkout
+      - deploy
+        name: Releasing New Build on github
+        command: curl -sL https://git.io/goreleaser | bash
   build:
     working_directory: /go/src/github.com/marshal003/hitree
     docker:
       - image: circleci/golang:1.10.0
     branches:
-      - dev
+      only:
+        - dev
     steps:
       - checkout
       - run: 
@@ -32,4 +45,4 @@ jobs:
       - deploy:
           name: "Publish test result to coverall"
           command: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken=$COVERALL_TOKEN
-    
+          
