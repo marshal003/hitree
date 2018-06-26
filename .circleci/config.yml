@@ -1,0 +1,68 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/marshal003/hitree
+    docker:
+      - image: circleci/golang:1.10.0
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restoring from cache
+          keys:
+            - requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
+      - run: 
+          name: Install Dep
+          command: curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o $GOPATH/bin/dep
+      - run: 
+          name: Make dep accessible
+          command: chmod +x $GOPATH/bin/dep
+      - run: 
+          name: Install dependecies
+          command: dep ensure
+      - run: 
+          name: Install hitree
+          command: go install
+      - run: 
+          name: Install Cover
+          command: go get golang.org/x/tools/cmd/cover
+      - run: 
+          name: Get goverall
+          command: go get github.com/mattn/goveralls
+      - run:
+          name: Running test cases with coverage output enabled
+          command: go test -v ./... -covermode=count -coverprofile=coverage.out
+      - deploy:
+          name: "Publish test result to coverall"
+          command: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken=$COVERALL_TOKEN
+      - save_cache:
+          name: dep-cache
+          paths: 
+            - vendor
+          key: requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
+  release:
+    working_directory: /go/src/github.com/marshal003/hitree
+    docker:
+      - image: circleci/golang:1.10.0
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restoring from cache
+          keys:
+            - requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
+      - deploy:
+          name: Releasing New Build on github
+          command: curl -sL https://git.io/goreleaser | bash
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - build:
+          filters:
+            branches:
+              only: dev
