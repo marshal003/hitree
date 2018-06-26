@@ -36,14 +36,13 @@ jobs:
           command: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken=$COVERALL_TOKEN
       - save_cache:
           name: dep-cache
+          paths: 
+            - vendor
           key: requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
   release:
     working_directory: /go/src/github.com/marshal003/hitree
     docker:
       - image: circleci/golang:1.10.0
-    branches:
-      only:
-        - master
     steps:
       - checkout
       - restore_cache:
@@ -63,4 +62,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v.*/
-      - build
+      - build:
+          filters:
+            branches:
+              only: dev
