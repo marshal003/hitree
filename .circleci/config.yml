@@ -31,5 +31,5 @@ jobs:
           command: go test -v ./... -covermode=count -coverprofile=coverage.out
       - deploy:
           name: "Publish test result to coverall"
-          command: goveralls -coverprofile=coverage.out -service=travis-ci -repotoken=$COVERALL_TOKEN
+          command: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken=$COVERALL_TOKEN
     
