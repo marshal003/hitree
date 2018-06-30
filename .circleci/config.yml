@@ -49,6 +49,15 @@ jobs:
           name: Restoring from cache
           keys:
             - requirements-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
+      - run: 
+          name: Install Dep
+          command: curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o $GOPATH/bin/dep
+      - run: 
+          name: Make dep accessible
+          command: chmod +x $GOPATH/bin/dep
+      - run: 
+          name: Install dependecies
+          command: dep ensure
       - deploy:
           name: Releasing New Build on github
           command: curl -sL https://git.io/goreleaser | bash
