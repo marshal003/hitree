@@ -60,7 +60,7 @@ jobs:
           command: dep ensure
       - deploy:
           name: Releasing New Build on github
-          command: curl -sL https://git.io/goreleaser | bash --skip-validate
+          command: curl -sL https://git.io/goreleaser | bash -s -- --skip-validate --rm-dist
 workflows:
   version: 2
   build_and_deploy:
