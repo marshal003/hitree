@@ -1,4 +1,7 @@
 ### HiTree - Golang Implementation of Tree Command
+ 
+[![Circle Ci](https://circleci.com/gh/marshal003/hitree.svg)](https://circleci.com/gh/marshal003/hitree.svg)
+[![Coverage Status](https://coveralls.io/repos/github/marshal003/hitree/badge.svg)](https://coveralls.io/github/marshal003/hitree)
 
 HiTree is a golang based implementation of popular linux tree command. This cameout as a learning exercise of golang. 
 
@@ -13,6 +16,8 @@ HiTree is a golang based implementation of popular linux tree command. This came
 - Printing report - count of dir and files 
 - Including / Excluding hidden files in result
 - Controlling Max Level in the output
+- Output Tree Structure as JSON on Console
+- Output Tree Structure in file
 
 ## Download & Install
 
@@ -47,30 +52,41 @@ go get -u github.com/marshal003/hitree
     ```
 - With flags
     ```
-    # List only directories
+    // List only directories
     hitree -d 
 
-    # Prune empty directories
+    // Prune empty directories
     hitree --prune
 
-    # Include hidden files & directories
+    // Include hidden files & directories
     hitree --all
 
-    # Include only go files
+    // Include only go files
     hitree -P "*.go"
 
-    # Exclude all md files
+    // Exclude all md files
     hitree -I "*.md"
 
-    # Skip reporting
+    // Skip reporting
     hitree --noreport
 
-    # Follow links (if this is dir)
+    // Follow links (if this is dir)
     hitree ---followlink
 
-    # Show fullpath and restrict level to 2
+    // Show fullpath and restrict level to 2
     hitree -L 3 -f
+
+    // Output tree structure as JSON on console
+    hitree --json > tree.json
+    
+    // Output tree structure as JSON on console
+    hitree --json -o output.json 
     ```
+### TODO
+- Add filtering support based on file size
+- Add filtering support based on file count
+- Add filtering support based on modification time
+
 ## References
 - https://linux.die.net/man/1/tree
 - https://www.youtube.com/watch?v=XbKSssBftLM&t=1s (Courtesy to Francesc Campoy)
