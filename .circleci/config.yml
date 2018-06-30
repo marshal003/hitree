@@ -58,6 +58,8 @@ jobs:
       - run: 
           name: Install dependecies
           command: dep ensure
+      - run: Clean State
+        command: rm Gopkg.lock
       - deploy:
           name: Releasing New Build on github
           command: curl -sL https://git.io/goreleaser | bash

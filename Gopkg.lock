@@ -8,6 +8,12 @@
   version = "v1.4.7"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -127,6 +133,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0e81012d3632feef44b7a8e36fdc864ffdc3f5de1eab5278d296adc8e22349f8"
+  inputs-digest = "9d5d706ac09d532deb66685e23b33781558cedb64bb3e6294a72c2dd58b9c21e"
   solver-name = "gps-cdcl"
   solver-version = 1
