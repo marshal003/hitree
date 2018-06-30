@@ -1,27 +1,31 @@
-package tree_test
+package cmd_test
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 
-	"github.com/marshal003/hitree/cmd/tree"
+	"github.com/marshal003/hitree/core/helper"
+	"github.com/spf13/cobra"
 )
 
+type HiTree cobra.Command
+
 // Example of running hitree command on a directory having structure as
-// a
-// 	b
-// 		.hidden
-// 		normalfile
-// 	c
-// 		d
-// 			e
-// 			normal
-// 		normal
-// normal
-func ExampleTree_Print() {
-	cleaner, _, root := SetupTestDir("Root")
+// root
+// 	a
+// 		b
+// 			.hidden
+// 			normal.go
+// 		c
+// 			d
+// 				e
+// 				normal.py
+// 			normal.go
+//  	normal.py
+// 	normal.go
+func ExampleHiTree() {
+	cleaner, _, root := helper.SetupTestDir("Root")
 	defer cleaner()
 	// $ hitree root
 	execute("hitree", root)
@@ -41,9 +45,9 @@ func ExampleTree_Print() {
 	// 5 directories, 5 files
 }
 
-// Only print the directory names
-func ExampleTree_Print_dirOnly() {
-	cleaner, _, root := SetupTestDir("RootA")
+// // Only print the directory names
+func ExampleHiTree_dirOnly() {
+	cleaner, _, root := helper.SetupTestDir("RootA")
 	defer cleaner()
 	// $ hitree root --dironly
 	execute("hitree", root, "--dironly")
@@ -58,9 +62,9 @@ func ExampleTree_Print_dirOnly() {
 	// 5 directories, 5 files
 }
 
-// Include hidden files and directory in the result
-func ExampleTree_Print_includeHidden() {
-	cleaner, _, root := SetupTestDir("RootB")
+// // Include hidden files and directory in the result
+func ExampleHiTree_includeHidden() {
+	cleaner, _, root := helper.SetupTestDir("RootB")
 	defer cleaner()
 	// $ hitree root --all
 	execute("hitree", root, "--all")
@@ -81,9 +85,9 @@ func ExampleTree_Print_includeHidden() {
 	// 5 directories, 6 files
 }
 
-// Don't print report(count of directory and count of file) in the result
-func ExampleTree_Print_noReport() {
-	cleaner, _, root := SetupTestDir("RootC")
+// // Don't print report(count of directory and count of file) in the result
+func ExampleHiTree_noReport() {
+	cleaner, _, root := helper.SetupTestDir("RootC")
 	defer cleaner()
 	// $ hitree root --noreport
 	execute("hitree", root, "--noreport")
@@ -101,9 +105,9 @@ func ExampleTree_Print_noReport() {
 	// └──normal.go
 }
 
-// Prune empty directory from result
-func ExampleTree_Print_prune() {
-	cleaner, _, root := SetupTestDir("RootD")
+// // Prune empty directory from result
+func ExampleHiTree_prune() {
+	cleaner, _, root := helper.SetupTestDir("RootD")
 	defer cleaner()
 	// $ hitree root --prune
 	execute("hitree", root, "--prune")
@@ -123,9 +127,9 @@ func ExampleTree_Print_prune() {
 	// 5 directories, 5 files
 }
 
-// Inlude files only till certain depth
-func ExampleTree_Print_maxLevel() {
-	cleaner, _, root := SetupTestDir("RootE")
+// // Inlude files only till certain depth
+func ExampleHiTree_maxLevel() {
+	cleaner, _, root := helper.SetupTestDir("RootE")
 	defer cleaner()
 	// $ hitree root --level
 	execute("hitree", root, "--level=2")
@@ -141,8 +145,8 @@ func ExampleTree_Print_maxLevel() {
 }
 
 // Inlude files which matches pattern
-func ExampleTree_Print_includePattern() {
-	cleaner, _, root := SetupTestDir("RootF")
+func ExampleHiTree_includePattern() {
+	cleaner, _, root := helper.SetupTestDir("RootF")
 	defer cleaner()
 	// $ hitree root --includepattern=*.go
 	execute("hitree", root, "--includepattern=*.go")
@@ -160,9 +164,9 @@ func ExampleTree_Print_includePattern() {
 	// 5 directories, 3 files
 }
 
-// Exclude files matching pattern
-func ExampleTree_Print_excludePatternWithDepth() {
-	cleaner, _, root := SetupTestDir("RootG")
+// // Exclude files matching pattern
+func ExampleHiTree_patternWithDepth() {
+	cleaner, _, root := helper.SetupTestDir("RootG")
 	defer cleaner()
 	// $ hitree root -I=*.go --level=2
 	execute("hitree", root, "-I=*.py", "--level=2")
@@ -174,30 +178,6 @@ func ExampleTree_Print_excludePatternWithDepth() {
 	// └──normal.go
 	//
 	// 3 directories, 1 files
-}
-
-type Cleaner func()
-
-func SetupTestDir(root string) (Cleaner, tree.Options, string) {
-	tree.InitAurora(false)
-	opt := tree.DefaultOptions()
-	pwd, _ := os.Getwd()
-	tempDir := os.TempDir()
-	tempDir = filepath.Join(tempDir, root)
-	os.RemoveAll(tempDir)
-	os.MkdirAll(filepath.Join(tempDir, "a", "b"), 0777)
-	os.MkdirAll(filepath.Join(tempDir, "a", "c", "d", "e"), 0777)
-	os.OpenFile(filepath.Join(tempDir, "a", "b", ".hidden"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(tempDir, "a", "b", "normal.go"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(tempDir, "a", "c", "d", "normal.py"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(tempDir, "a", "c", "normal.go"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(tempDir, "a", "normal.py"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.OpenFile(filepath.Join(tempDir, "normal.go"), os.O_RDONLY|os.O_CREATE, 0666)
-	os.Chdir(tempDir)
-	return func() {
-		os.Chdir(pwd)
-		os.RemoveAll(tempDir)
-	}, opt, tempDir
 }
 
 func execute(command, root string, args ...string) {

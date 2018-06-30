@@ -3,3 +3,4 @@ dist/
 notes.md
 vendor
 .vscode
+coverage.out

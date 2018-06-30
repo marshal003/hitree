@@ -16,12 +16,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"runtime"
 	"strings"
 
-	"github.com/marshal003/hitree/cmd/tree"
+	tree "github.com/marshal003/hitree/core"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -68,10 +69,12 @@ func initOptions() {
 	opt.MaxLevel = int16(viper.GetInt("level"))
 	opt.ExcludePattern = viper.GetString("excludepattern")
 	opt.IncludePattern = viper.GetString("includepattern")
+	opt.Indent = viper.GetInt("jsonindent")
+	opt.OutputPath = viper.GetString("output")
 }
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:   "hitree",
 	Short: "Print tree structure of the directory",
 	Long: `Golang implementation of popular tree command from linux.q
@@ -95,25 +98,50 @@ disable color outputs on windows platform.
 			release.Print()
 			return nil
 		}
-		root := "."
+		path := "."
 		if len(args) >= 1 {
-			root = args[0]
+			path = args[0]
 		}
 
-		tree, err := tree.TraverseDir(root, opt, 0)
+		root, err := tree.TraverseDir(path, opt, 0)
 		if err != nil {
 			return err
 		}
-		tree.Print(opt)
-		return nil
+		return sendOutput(cmd, root)
 	},
+}
+
+func sendOutput(cmd *cobra.Command, root tree.Tree) error {
+	asJSON, _ := cmd.Flags().GetBool("json")
+	var w io.WriteCloser
+	if opt.OutputPath != "stdout" {
+		f, err := os.Create(opt.OutputPath)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to open output file %v", err))
+		}
+		w = f
+	} else {
+		w = os.Stdout
+	}
+	defer w.Close()
+
+	if !asJSON {
+		root.Print(w, opt)
+		return nil
+	}
+	res, err := root.AsJSONString(opt)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "\n%s\n", res)
+	return nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(version, commit, date interface{}) {
 	releaseDetails(version, date, commit)
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -121,45 +149,50 @@ func Execute(version, commit, date interface{}) {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.Flags().SortFlags = false
-	rootCmd.PersistentFlags().SortFlags = false
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hitree.yaml)")
-	rootCmd.Flags().BoolP("version", "v", false, "Version of hitree command")
-	rootCmd.Flags().BoolP("dironly", "d", false, "List only directories")
-	rootCmd.Flags().BoolP("all", "a", false, "List all files & directories including hidden ones")
-	rootCmd.Flags().BoolP("fullpath", "f", false, "Print full path prefix for all files")
-	rootCmd.Flags().BoolP("noreport", "", false, "Omits printing of the file and directory report at the end of the tree listing.")
-	rootCmd.Flags().BoolP("followlink", "l", false, "Follow link and list files in the link is for a directory")
-	rootCmd.Flags().BoolP("prune", "", false, "Makes tree prune empty directories from the output")
-	rootCmd.Flags().Bool("nocolor", false, "Directory Color")
-	rootCmd.Flags().Int16P("level", "L", -1, "Max display depth of the directory tree")
-	rootCmd.Flags().StringP("includepattern", "P", "", "List only those files which matches to wild-card pattern")
-	rootCmd.Flags().StringP("excludepattern", "I", "", "Do not list those files that match the wild-card pattern.")
-	rootCmd.Flags().String("dircolor", "gray", "Directory Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
-	rootCmd.Flags().String("filecolor", "green", "File Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
-	rootCmd.Flags().String("symlinkcolor", "blue", "SymLink Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
-	rootCmd.Flags().String("tlinkcolor", "brown", "TLink Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
-	rootCmd.Flags().String("llinkcolor", "brown", "Pipe Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
-	rootCmd.Flags().String("pipecolor", "brown", "Pipe Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().SortFlags = false
+	RootCmd.PersistentFlags().SortFlags = false
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hitree.yaml)")
+	RootCmd.Flags().BoolP("version", "v", false, "Version of hitree command")
+	RootCmd.Flags().BoolP("json", "j", false, "Print Tree structure as JSON")
+	RootCmd.Flags().Int("jsonindent", 2, "JSON Indentation")
+	RootCmd.Flags().StringP("output", "o", "stdout", "Put result in the output file")
+	RootCmd.Flags().BoolP("dironly", "d", false, "List only directories")
+	RootCmd.Flags().BoolP("all", "a", false, "List all files & directories including hidden ones")
+	RootCmd.Flags().BoolP("fullpath", "f", false, "Print full path prefix for all files")
+	RootCmd.Flags().BoolP("noreport", "", false, "Omits printing of the file and directory report at the end of the tree listing.")
+	RootCmd.Flags().BoolP("followlink", "l", false, "Follow link and list files in the link is for a directory")
+	RootCmd.Flags().BoolP("prune", "", false, "Makes tree prune empty directories from the output")
+	RootCmd.Flags().Bool("nocolor", false, "Directory Color")
+	RootCmd.Flags().Int16P("level", "L", -1, "Max display depth of the directory tree")
+	RootCmd.Flags().StringP("includepattern", "P", "", "List only those files which matches to wild-card pattern")
+	RootCmd.Flags().StringP("excludepattern", "I", "", "Do not list those files that match the wild-card pattern.")
+	RootCmd.Flags().String("dircolor", "gray", "Directory Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().String("filecolor", "green", "File Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().String("symlinkcolor", "blue", "SymLink Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().String("tlinkcolor", "brown", "TLink Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().String("llinkcolor", "brown", "Pipe Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
+	RootCmd.Flags().String("pipecolor", "brown", "Pipe Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
 
 	//Bind viper
-	viper.BindPFlag("dironly", rootCmd.Flags().Lookup("dironly"))
-	viper.BindPFlag("nocolor", rootCmd.Flags().Lookup("nocolor"))
-	viper.BindPFlag("all", rootCmd.Flags().Lookup("all"))
-	viper.BindPFlag("fullpath", rootCmd.Flags().Lookup("fullpath"))
-	viper.BindPFlag("noreport", rootCmd.Flags().Lookup("noreport"))
-	viper.BindPFlag("followlink", rootCmd.Flags().Lookup("followlink"))
-	viper.BindPFlag("level", rootCmd.Flags().Lookup("level"))
-	viper.BindPFlag("includepattern", rootCmd.Flags().Lookup("includepattern"))
-	viper.BindPFlag("excludepattern", rootCmd.Flags().Lookup("excludepattern"))
+	viper.BindPFlag("dironly", RootCmd.Flags().Lookup("dironly"))
+	viper.BindPFlag("output", RootCmd.Flags().Lookup("output"))
+	viper.BindPFlag("nocolor", RootCmd.Flags().Lookup("nocolor"))
+	viper.BindPFlag("all", RootCmd.Flags().Lookup("all"))
+	viper.BindPFlag("fullpath", RootCmd.Flags().Lookup("fullpath"))
+	viper.BindPFlag("noreport", RootCmd.Flags().Lookup("noreport"))
+	viper.BindPFlag("followlink", RootCmd.Flags().Lookup("followlink"))
+	viper.BindPFlag("level", RootCmd.Flags().Lookup("level"))
+	viper.BindPFlag("includepattern", RootCmd.Flags().Lookup("includepattern"))
+	viper.BindPFlag("excludepattern", RootCmd.Flags().Lookup("excludepattern"))
+	viper.BindPFlag("jsonindent", RootCmd.Flags().Lookup("jsonindent"))
 
-	viper.BindPFlag("nocolor", rootCmd.Flags().Lookup("nocolor"))
-	viper.BindPFlag("dircolor", rootCmd.Flags().Lookup("dircolor"))
-	viper.BindPFlag("filecolor", rootCmd.Flags().Lookup("filecolor"))
-	viper.BindPFlag("symlinkcolor", rootCmd.Flags().Lookup("symlinkcolor"))
-	viper.BindPFlag("tlinkcolor", rootCmd.Flags().Lookup("tlinkcolor"))
-	viper.BindPFlag("llinkcolor", rootCmd.Flags().Lookup("llinkcolor"))
-	viper.BindPFlag("pipecolor", rootCmd.Flags().Lookup("pipecolor"))
+	viper.BindPFlag("nocolor", RootCmd.Flags().Lookup("nocolor"))
+	viper.BindPFlag("dircolor", RootCmd.Flags().Lookup("dircolor"))
+	viper.BindPFlag("filecolor", RootCmd.Flags().Lookup("filecolor"))
+	viper.BindPFlag("symlinkcolor", RootCmd.Flags().Lookup("symlinkcolor"))
+	viper.BindPFlag("tlinkcolor", RootCmd.Flags().Lookup("tlinkcolor"))
+	viper.BindPFlag("llinkcolor", RootCmd.Flags().Lookup("llinkcolor"))
+	viper.BindPFlag("pipecolor", RootCmd.Flags().Lookup("pipecolor"))
 }
 
 // initConfig reads in config file and ENV variables if set.

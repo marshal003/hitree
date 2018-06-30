@@ -1,51 +1,9 @@
-package tree
+package core
 
 import "github.com/logrusorgru/aurora"
 
 //Colorize A function type which is being used in Options
 type Colorize func(interface{}) aurora.Value
-
-//Options Data model to hold command line options
-type Options struct {
-	IncludeHidden  bool
-	DirOnly        bool
-	ShowFullPath   bool
-	NoReport       bool
-	FollowLink     bool
-	Prune          bool
-	MaxLevel       int16
-	IncludePattern string
-	ExcludePattern string
-	DirColor       Colorize
-	FileColor      Colorize
-	SymLinkColor   Colorize
-	TLinkColor     Colorize
-	LLinkColor     Colorize
-	PipeColor      Colorize
-}
-
-// DefaultOptions A utility method to create default Options for hitree command
-// This is intensionally created for test cases
-func DefaultOptions() Options {
-	opt := Options{
-		IncludeHidden:  false,
-		DirOnly:        false,
-		ShowFullPath:   false,
-		NoReport:       false,
-		FollowLink:     false,
-		Prune:          false,
-		MaxLevel:       -1,
-		IncludePattern: "",
-		ExcludePattern: "",
-		DirColor:       ColorMap["gray"],
-		FileColor:      ColorMap["gray"],
-		SymLinkColor:   ColorMap["gray"],
-		TLinkColor:     ColorMap["gray"],
-		LLinkColor:     ColorMap["gray"],
-		PipeColor:      ColorMap["gray"],
-	}
-	return opt
-}
 
 var au aurora.Aurora
 

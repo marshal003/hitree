@@ -1,11 +1,13 @@
-// Package tree implements the data models and helper utilities for
+// Package core implements the data models and helper utilities for
 // printing tree structure of the specified directory
 //
 // By Vinit Kumar Rai <vinitrai.marshal@gmail.com>
-package tree
+package core
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +32,13 @@ type Tree struct {
 	Stats     Stats
 }
 
+//JSONTree Json Representation of Tree
+type JSONTree struct {
+	Name    string     `json:"name"`
+	FType   FileType   `json:"file_type"`
+	SubTree []JSONTree `json:"subtree"`
+}
+
 // String Implements String method of Stringer interface, helpful in debugging.
 // For Printing the tree structure like linux command use Print method
 func (tree Tree) String() string {
@@ -44,16 +53,16 @@ func (tree Tree) String() string {
 // Print is a utility method on the tree to print tree structure on console.
 // Later we will few more mthods on tree which will allow to output tree result
 // to other means like file or socket etc.
-func (tree Tree) Print(opt Options) {
-	tree.printTree(opt, 0, false)
+func (tree Tree) Print(w io.Writer, opt Options) {
+	tree.printTree(w, opt, 0, false)
 	if !opt.NoReport {
-		fmt.Printf("\n%d directories, %d files\n", tree.Stats.DirCount, tree.Stats.FileCount)
+		fmt.Fprintf(w, "\n%d directories, %d files\n", tree.Stats.DirCount, tree.Stats.FileCount)
 	}
 }
 
 //printTree Helper private method to recursively print tree on console
-func (tree Tree) printTree(opt Options, padding int, isLastChild bool) {
-	tree.printNode(opt)
+func (tree Tree) printTree(w io.Writer, opt Options, padding int, isLastChild bool) {
+	tree.printNode(w, opt)
 	l := len(tree.Childrens)
 	for index, subtree := range tree.Childrens {
 		i := 0
@@ -62,20 +71,20 @@ func (tree Tree) printTree(opt Options, padding int, isLastChild bool) {
 		}
 		for i < padding {
 			if i+1 == padding && isLastChild {
-				fmt.Printf("%s", " ")
+				fmt.Fprintf(w, "%s", " ")
 			} else {
-				fmt.Printf("%s", opt.PipeColor("│"))
+				fmt.Fprintf(w, "%s", opt.PipeColor("│"))
 			}
-			fmt.Printf("%s", strings.Repeat(" ", 2))
+			fmt.Fprintf(w, "%s", strings.Repeat(" ", 2))
 			i = i + 1
 		}
 
 		if l == index+1 {
-			fmt.Printf("%s", opt.LLinkColor("└──"))
+			fmt.Fprintf(w, "%s", opt.LLinkColor("└──"))
 		} else {
-			fmt.Printf("%s", opt.TLinkColor("├──"))
+			fmt.Fprintf(w, "%s", opt.TLinkColor("├──"))
 		}
-		subtree.printTree(opt, padding+1, index+1 == l)
+		subtree.printTree(w, opt, padding+1, index+1 == l)
 	}
 }
 
@@ -88,17 +97,21 @@ func (tree Tree) getColor(opt Options) Colorize {
 }
 
 //printNode Helper private method to print node(Root of tree)
-func (tree Tree) printNode(opt Options) {
+func (tree Tree) printNode(w io.Writer, opt Options) {
 	colorize := tree.getColor(opt)
-	if !opt.ShowFullPath {
-		fmt.Printf("%s\n", colorize(tree.Root.Name()))
-		return
-	}
-	path, err := filepath.Abs(tree.Root.Name())
+	path, err := tree.NodeName(opt)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%s\n", colorize(path))
+	fmt.Fprintf(w, "%s\n", colorize(path))
+}
+
+//NodeName Get NodeName of the tree
+func (tree Tree) NodeName(opt Options) (string, error) {
+	if !opt.ShowFullPath {
+		return tree.Root.Name(), nil
+	}
+	return filepath.Abs(tree.Root.Name())
 }
 
 //canPrune Helper private method to check if the tree can be pruned from output
@@ -108,4 +121,25 @@ func canPrune(tree Tree, opt Options) bool {
 		return true
 	}
 	return false
+}
+
+//AsJSONTree Utility function to return tree as json string
+func (tree Tree) AsJSONTree(opt Options) JSONTree {
+	name, _ := tree.NodeName(opt)
+	fileType := GetFileType(tree.Root)
+	jsonTree := JSONTree{Name: name, FType: fileType, SubTree: []JSONTree{}}
+	for _, subtree := range tree.Childrens {
+		if canPrune(subtree, opt) {
+			continue
+		}
+		child := subtree.AsJSONTree(opt)
+		jsonTree.SubTree = append(jsonTree.SubTree, child)
+	}
+	return jsonTree
+}
+
+//AsJSONString ...
+func (tree Tree) AsJSONString(opt Options) ([]byte, error) {
+	jsonTree := tree.AsJSONTree(opt)
+	return json.MarshalIndent(jsonTree, strings.Repeat(" ", int(opt.Indent)), strings.Repeat(" ", int(opt.Indent)))
 }

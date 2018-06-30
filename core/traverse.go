@@ -1,4 +1,4 @@
-package tree
+package core
 
 import (
 	"io/ioutil"
@@ -70,15 +70,15 @@ func updateStats(tree Tree, stats Stats) Stats {
 
 func applyFilters(fis []os.FileInfo, opt Options) []os.FileInfo {
 	if !opt.IncludeHidden {
-		fis = filterOutHidden(fis)
+		fis = FilterOutHidden(fis)
 	}
 
 	if len(opt.ExcludePattern) > 0 {
-		fis = filterPattern(fis, opt.ExcludePattern, false)
+		fis = FileFilterPattern(fis, opt.ExcludePattern, false)
 	}
 
 	if len(opt.IncludePattern) > 0 {
-		fis = filterPattern(fis, opt.IncludePattern, true)
+		fis = FileFilterPattern(fis, opt.IncludePattern, true)
 	}
 	return fis
 }
