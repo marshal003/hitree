@@ -4,7 +4,22 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 )
+
+//ByModTime Sort FileInfos by ModificationTime
+type ByModTime []os.FileInfo
+
+func (a ByModTime) Len() int           { return len(a) }
+func (a ByModTime) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByModTime) Less(i, j int) bool { return a[i].ModTime().Unix() < a[j].ModTime().Unix() }
+
+//ByNameReverse Sort FileInfos by name
+type ByNameReverse []os.FileInfo
+
+func (a ByNameReverse) Len() int           { return len(a) }
+func (a ByNameReverse) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByNameReverse) Less(i, j int) bool { return a[i].Name() > a[j].Name() }
 
 //TraverseDir utility method to recursively traverse through the dir
 func TraverseDir(root string, opt Options, level int16) (Tree, error) {
@@ -13,8 +28,9 @@ func TraverseDir(root string, opt Options, level int16) (Tree, error) {
 	if err != nil {
 		return tree, err
 	}
+	stats := NewEmptyStats(fi)
 	if !fi.IsDir() {
-		return Tree{Root: fi, Stats: Stats{0, 0}}, nil
+		return Tree{Root: fi, Stats: stats}, nil
 	}
 	files, err := ioutil.ReadDir(root)
 	if err != nil {
@@ -23,7 +39,14 @@ func TraverseDir(root string, opt Options, level int16) (Tree, error) {
 
 	files = applyFilters(files, opt)
 	childrens := make([]Tree, 0)
-	stats := Stats{}
+
+	if opt.SortByModTime {
+		sort.Sort(ByModTime(files))
+	}
+
+	if opt.SortReverse {
+		sort.Sort(ByNameReverse(files))
+	}
 
 	for _, fi := range files {
 		if opt.MaxLevel > -1 && level >= opt.MaxLevel {
@@ -69,6 +92,10 @@ func updateStats(tree Tree, stats Stats) Stats {
 }
 
 func applyFilters(fis []os.FileInfo, opt Options) []os.FileInfo {
+	if opt.FileLimit > -1 && len(fis) > opt.FileLimit {
+		return []os.FileInfo{}
+	}
+
 	if !opt.IncludeHidden {
 		fis = FilterOutHidden(fis)
 	}
@@ -80,5 +107,6 @@ func applyFilters(fis []os.FileInfo, opt Options) []os.FileInfo {
 	if len(opt.IncludePattern) > 0 {
 		fis = FileFilterPattern(fis, opt.IncludePattern, true)
 	}
+
 	return fis
 }

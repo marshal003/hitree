@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 )
 
 // Stats Data Model to hold the File & Dir Count in the tree.
@@ -19,8 +21,23 @@ import (
 // which could be helpful in including / excluding files and directories based on
 // these values.
 type Stats struct {
-	DirCount  int
-	FileCount int
+	DirCount         int
+	FileCount        int
+	Size             int64
+	ModificationTime time.Time
+	Permission       string
+}
+
+//NewEmptyStats ...
+func NewEmptyStats(fi os.FileInfo) Stats {
+	stats := Stats{
+		DirCount:         0,
+		FileCount:        0,
+		Size:             fi.Size(),
+		ModificationTime: fi.ModTime(),
+		Permission:       fi.Mode().Perm().String(),
+	}
+	return stats
 }
 
 // Tree Data Model representing a file/directory as Root and Its childrens(in case of directory).
@@ -96,6 +113,32 @@ func (tree Tree) getColor(opt Options) Colorize {
 	return opt.FileColor
 }
 
+//GetExtra ...
+func GetExtra(tree Tree, opt Options) string {
+	extra := make([]string, 0)
+	if opt.PrintUID {
+		extra = append(extra, fmt.Sprintf("%d", tree.Root.Sys().(*syscall.Stat_t).Uid))
+	}
+	if opt.PrintGID {
+		extra = append(extra, fmt.Sprintf("%d", tree.Root.Sys().(*syscall.Stat_t).Gid))
+	}
+	if opt.PrintSize {
+		extra = append(extra, fmt.Sprintf("%d", tree.Stats.Size))
+	}
+	if opt.PrintModTime {
+		extra = append(extra, tree.Stats.ModificationTime.Format(opt.TimeFormat))
+	}
+
+	if opt.PrintProtection {
+		extra = append(extra, tree.Stats.Permission)
+	}
+	res := strings.Join(extra, " ")
+	if len(extra) >= 1 {
+		return fmt.Sprintf("[ %s ]", res)
+	}
+	return ""
+}
+
 //printNode Helper private method to print node(Root of tree)
 func (tree Tree) printNode(w io.Writer, opt Options) {
 	colorize := tree.getColor(opt)
@@ -103,7 +146,7 @@ func (tree Tree) printNode(w io.Writer, opt Options) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(w, "%s\n", colorize(path))
+	fmt.Fprintf(w, "%s %s\n", colorize(GetExtra(tree, opt)), colorize(path))
 }
 
 //NodeName Get NodeName of the tree

@@ -71,6 +71,15 @@ func initOptions() {
 	opt.IncludePattern = viper.GetString("includepattern")
 	opt.Indent = viper.GetInt("jsonindent")
 	opt.OutputPath = viper.GetString("output")
+	opt.FileLimit = viper.GetInt("filelimit")
+	opt.PrintGID = (runtime.GOOS == "linux" || runtime.GOOS == "darwin") && viper.GetBool("group")
+	opt.PrintUID = (runtime.GOOS == "linux" || runtime.GOOS == "darwin") && viper.GetBool("user")
+	opt.PrintSize = viper.GetBool("size")
+	opt.PrintProtection = viper.GetBool("protection")
+	opt.PrintModTime = viper.GetBool("modtime")
+	opt.SortReverse = viper.GetBool("reverse")
+	opt.SortByModTime = viper.GetBool("sortbymodtime")
+	opt.TimeFormat = viper.GetString("timefmt")
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -82,7 +91,7 @@ Note: windows 10 has issue with ansi color, so for this release we have
 disable color outputs on windows platform.
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		nocolor := viper.GetBool("nocolor") || (runtime.GOOS == "windows")
+		nocolor := (viper.GetBool("nocolor") || (runtime.GOOS == "windows"))
 		tree.InitAurora(!nocolor)
 		initOptions()
 		setColorOption(cmd, &opt.DirColor, "dircolor")
@@ -162,10 +171,25 @@ func init() {
 	RootCmd.Flags().BoolP("noreport", "", false, "Omits printing of the file and directory report at the end of the tree listing.")
 	RootCmd.Flags().BoolP("followlink", "l", false, "Follow link and list files in the link is for a directory")
 	RootCmd.Flags().BoolP("prune", "", false, "Makes tree prune empty directories from the output")
-	RootCmd.Flags().Bool("nocolor", false, "Directory Color")
+	RootCmd.Flags().BoolP("nocolor", "n", false, "Turn colorization off always")
 	RootCmd.Flags().Int16P("level", "L", -1, "Max display depth of the directory tree")
+
+	//New
+	RootCmd.Flags().Int("filelimit", -1, "Do not descend directories that contain more than # entries.")
+	RootCmd.Flags().String("timefmt", "Jan 2 13:10", "Prints (implies -D) and formats the date according to the format string")
+	RootCmd.Flags().BoolP("protection", "p", false, "Print Protection on file")
+	RootCmd.Flags().BoolP("size", "s", false, "Print Size on file")
+	RootCmd.Flags().BoolP("user", "u", false, "Print the username, or UID")
+	RootCmd.Flags().BoolP("group", "g", false, "Print the group name, or GID")
+	RootCmd.Flags().BoolP("modtime", "D", false, "Print the date of the last modification time for the file listed")
+	RootCmd.Flags().BoolP("reverse", "r", false, "Sort the output in reverse alphabetic order")
+	RootCmd.Flags().BoolP("sortbymodtime", "t", false, "Sort the output by last modification time instead of alphabetically")
+
+	//Pattern flags
 	RootCmd.Flags().StringP("includepattern", "P", "", "List only those files which matches to wild-card pattern")
 	RootCmd.Flags().StringP("excludepattern", "I", "", "Do not list those files that match the wild-card pattern.")
+
+	//Color flag
 	RootCmd.Flags().String("dircolor", "gray", "Directory Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
 	RootCmd.Flags().String("filecolor", "green", "File Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
 	RootCmd.Flags().String("symlinkcolor", "blue", "SymLink Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
@@ -174,6 +198,16 @@ func init() {
 	RootCmd.Flags().String("pipecolor", "brown", "Pipe Color(gray/b, green/b, blue/b, brown/b, red/b, black/b, magenta/b, cyan/b)")
 
 	//Bind viper
+	viper.BindPFlag("filelimit", RootCmd.Flags().Lookup("filelimit"))
+	viper.BindPFlag("timefmt", RootCmd.Flags().Lookup("timefmt"))
+	viper.BindPFlag("protection", RootCmd.Flags().Lookup("protection"))
+	viper.BindPFlag("size", RootCmd.Flags().Lookup("size"))
+	viper.BindPFlag("user", RootCmd.Flags().Lookup("user"))
+	viper.BindPFlag("group", RootCmd.Flags().Lookup("group"))
+	viper.BindPFlag("modtime", RootCmd.Flags().Lookup("modtime"))
+	viper.BindPFlag("reverse", RootCmd.Flags().Lookup("reverse"))
+	viper.BindPFlag("sortbymodtime", RootCmd.Flags().Lookup("sortbymodtime"))
+
 	viper.BindPFlag("dironly", RootCmd.Flags().Lookup("dironly"))
 	viper.BindPFlag("output", RootCmd.Flags().Lookup("output"))
 	viper.BindPFlag("nocolor", RootCmd.Flags().Lookup("nocolor"))

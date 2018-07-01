@@ -49,33 +49,9 @@ func FilterOutHidden(fis []os.FileInfo) []os.FileInfo {
 // Note: This filter will only be applied on files
 func FileFilterPattern(fis []os.FileInfo, pattern string, include bool) []os.FileInfo {
 	return Filter(fis, func(fi os.FileInfo) bool {
-		if fi.IsDir() { // Pattern only applies for files
-			return true
-		}
 		matched, err := filepath.Match(pattern, fi.Name())
 		if err != nil {
-			panic(err)
-		}
-		if include {
-			return matched
-		}
-		return !matched
-	})
-}
-
-// DirFilterPattern Filter fileInfos whose filepath matched with patern. Include flag
-// is used to control the inclusion/exclusion of matched fileinfos in the result set.
-// eg. If include flag is true, and file path matched with given pattern, then that
-// file info will be incuded in the result.
-// Note: This filter will only be applied on files
-func DirFilterPattern(fis []os.FileInfo, pattern string, include bool) []os.FileInfo {
-	return Filter(fis, func(fi os.FileInfo) bool {
-		if !fi.IsDir() { // Pattern only applies for files
-			return true
-		}
-		matched, err := filepath.Match(pattern, fi.Name())
-		if err != nil {
-			panic(err)
+			panic("\nRegularExpression is incorrect, Please refer https://golang.org/pkg/path/filepath/#Match\n")
 		}
 		if include {
 			return matched
