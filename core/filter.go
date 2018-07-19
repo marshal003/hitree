@@ -49,6 +49,9 @@ func FilterOutHidden(fis []os.FileInfo) []os.FileInfo {
 // Note: This filter will only be applied on files
 func FileFilterPattern(fis []os.FileInfo, pattern string, include bool) []os.FileInfo {
 	return Filter(fis, func(fi os.FileInfo) bool {
+		if fi.IsDir() {
+			return true
+		}
 		matched, err := filepath.Match(pattern, fi.Name())
 		if err != nil {
 			panic("\nRegularExpression is incorrect, Please refer https://golang.org/pkg/path/filepath/#Match\n")

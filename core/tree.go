@@ -21,11 +21,11 @@ import (
 // which could be helpful in including / excluding files and directories based on
 // these values.
 type Stats struct {
-	DirCount         int
-	FileCount        int
-	Size             int64
-	ModificationTime time.Time
-	Permission       string
+	DirCount         int       `json:"dir_count"`
+	FileCount        int       `json:"file_count"`
+	Size             int64     `json:"size"`
+	ModificationTime time.Time `json:"mod_time"`
+	Permission       string    `json:"permission"`
 }
 
 //NewEmptyStats ...
@@ -53,6 +53,7 @@ type Tree struct {
 type JSONTree struct {
 	Name    string     `json:"name"`
 	FType   FileType   `json:"file_type"`
+	FStats  Stats      `json:"stats"`
 	SubTree []JSONTree `json:"subtree"`
 }
 
@@ -146,7 +147,7 @@ func (tree Tree) printNode(w io.Writer, opt Options) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(w, "%s %s\n", colorize(GetExtra(tree, opt)), colorize(path))
+	fmt.Fprintf(w, "%s%s\n", colorize(GetExtra(tree, opt)), colorize(path))
 }
 
 //NodeName Get NodeName of the tree
@@ -171,6 +172,9 @@ func (tree Tree) AsJSONTree(opt Options) JSONTree {
 	name, _ := tree.NodeName(opt)
 	fileType := GetFileType(tree.Root)
 	jsonTree := JSONTree{Name: name, FType: fileType, SubTree: []JSONTree{}}
+	if opt.JSONIncludeStats {
+		jsonTree.FStats = tree.Stats
+	}
 	for _, subtree := range tree.Childrens {
 		if canPrune(subtree, opt) {
 			continue

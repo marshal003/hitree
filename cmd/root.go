@@ -70,6 +70,7 @@ func initOptions() {
 	opt.ExcludePattern = viper.GetString("excludepattern")
 	opt.IncludePattern = viper.GetString("includepattern")
 	opt.Indent = viper.GetInt("jsonindent")
+	opt.JSONIncludeStats = viper.GetBool("includestats")
 	opt.OutputPath = viper.GetString("output")
 	opt.FileLimit = viper.GetInt("filelimit")
 	opt.PrintGID = (runtime.GOOS == "linux" || runtime.GOOS == "darwin") && viper.GetBool("group")
@@ -86,9 +87,9 @@ func initOptions() {
 var RootCmd = &cobra.Command{
 	Use:   "hitree",
 	Short: "Print tree structure of the directory",
-	Long: `Golang implementation of popular tree command from linux.q
-Note: windows 10 has issue with ansi color, so for this release we have
-disable color outputs on windows platform.
+	Long: `Golang implementation of popular tree command from linux.
+Note: windows 10 has issue with ansi color, so for this release color output will be
+disabled on windows platform.
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		nocolor := (viper.GetBool("nocolor") || (runtime.GOOS == "windows"))
@@ -163,6 +164,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hitree.yaml)")
 	RootCmd.Flags().BoolP("version", "v", false, "Version of hitree command")
 	RootCmd.Flags().BoolP("json", "j", false, "Print Tree structure as JSON")
+	RootCmd.Flags().Bool("includestats", false, "Include File Stats in JSON Output")
 	RootCmd.Flags().Int("jsonindent", 2, "JSON Indentation")
 	RootCmd.Flags().StringP("output", "o", "stdout", "Put result in the output file")
 	RootCmd.Flags().BoolP("dironly", "d", false, "List only directories")
@@ -176,7 +178,7 @@ func init() {
 
 	//New
 	RootCmd.Flags().Int("filelimit", -1, "Do not descend directories that contain more than # entries.")
-	RootCmd.Flags().String("timefmt", "Jan 2 13:10", "Prints (implies -D) and formats the date according to the format string")
+	RootCmd.Flags().String("timefmt", "Jan 2 15:04:05 PM", "Prints (implies -D) and formats the date according to the format string")
 	RootCmd.Flags().BoolP("protection", "p", false, "Print Protection on file")
 	RootCmd.Flags().BoolP("size", "s", false, "Print Size on file")
 	RootCmd.Flags().BoolP("user", "u", false, "Print the username, or UID")
@@ -219,6 +221,7 @@ func init() {
 	viper.BindPFlag("includepattern", RootCmd.Flags().Lookup("includepattern"))
 	viper.BindPFlag("excludepattern", RootCmd.Flags().Lookup("excludepattern"))
 	viper.BindPFlag("jsonindent", RootCmd.Flags().Lookup("jsonindent"))
+	viper.BindPFlag("includestats", RootCmd.Flags().Lookup("includestats"))
 
 	viper.BindPFlag("nocolor", RootCmd.Flags().Lookup("nocolor"))
 	viper.BindPFlag("dircolor", RootCmd.Flags().Lookup("dircolor"))
