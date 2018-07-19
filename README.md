@@ -101,4 +101,4 @@ go get -u github.com/marshal003/hitree
 
 ## License
 
-HiTree is released under the Apache 2.0 license. See 
+HiTree is released under the Apache 2.0 license. See LICENSE for more details.
