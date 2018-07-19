@@ -10,8 +10,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -117,11 +117,12 @@ func (tree Tree) getColor(opt Options) Colorize {
 //GetExtra ...
 func GetExtra(tree Tree, opt Options) string {
 	extra := make([]string, 0)
+	sys := tree.Root.Sys()
 	if opt.PrintUID {
-		extra = append(extra, fmt.Sprintf("%d", tree.Root.Sys().(*syscall.Stat_t).Uid))
+		extra = append(extra, fmt.Sprintf("%v", reflect.ValueOf(sys).Elem().FieldByName("Uid")))
 	}
 	if opt.PrintGID {
-		extra = append(extra, fmt.Sprintf("%d", tree.Root.Sys().(*syscall.Stat_t).Gid))
+		extra = append(extra, fmt.Sprintf("%v", reflect.ValueOf(sys).Elem().FieldByName("Gid")))
 	}
 	if opt.PrintSize {
 		extra = append(extra, fmt.Sprintf("%d", tree.Stats.Size))
