@@ -18,6 +18,16 @@ HiTree is a golang based implementation of popular linux tree command. This came
 - Controlling Max Level in the output
 - Output Tree Structure as JSON on Console
 - Output Tree Structure in file
+- Filter Dirs based on filelimit
+- Output with UserId, GroupId, Permission & Modification Time
+- Sort in reverse alphabatic order
+- Sort by Modification time
+- Include Stats in JSON structure
+- Redirect output in File
+
+## Demo (using termtosvg)
+
+![Alt text](./hitree.svg)
 
 ## Download & Install
 
@@ -83,8 +93,6 @@ go get -u github.com/marshal003/hitree
     hitree --json -o output.json 
     ```
 ### TODO
-- Add filtering support based on file size
-- Add filtering support based on file count
 - Add filtering support based on modification time
 
 ## References

@@ -53,7 +53,7 @@ type Tree struct {
 type JSONTree struct {
 	Name    string     `json:"name"`
 	FType   FileType   `json:"file_type"`
-	FStats  Stats      `json:"stats"`
+	FStats  *Stats     `json:"stats,omitempty"`
 	SubTree []JSONTree `json:"subtree"`
 }
 
@@ -173,7 +173,7 @@ func (tree Tree) AsJSONTree(opt Options) JSONTree {
 	fileType := GetFileType(tree.Root)
 	jsonTree := JSONTree{Name: name, FType: fileType, SubTree: []JSONTree{}}
 	if opt.JSONIncludeStats {
-		jsonTree.FStats = tree.Stats
+		jsonTree.FStats = &tree.Stats
 	}
 	for _, subtree := range tree.Childrens {
 		if canPrune(subtree, opt) {
