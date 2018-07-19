@@ -27,7 +27,7 @@ HiTree is a golang based implementation of popular linux tree command. This came
 
 ## Demo (using termtosvg)
 
-![Alt text](./hitree.svg)
+![Alt text](https://cdn.rawgit.com/marshal003/hitree/master/hitree.svg)
 
 ## Download & Install
 
